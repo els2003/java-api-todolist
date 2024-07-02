@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.todolist.model.Todo;
+import com.api.todolist.model.User;
 import com.api.todolist.service.TodoService;
+import com.api.todolist.service.UserService;
 
 @RestController
 @RequestMapping("/api/todos")
@@ -24,6 +27,9 @@ public class TodoController {
 
     @Autowired
     private TodoService todoService;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping
     public List<Todo> getAllTodos() {
@@ -37,8 +43,16 @@ public class TodoController {
     }
 
     @PostMapping
-    public Todo createTodo(@Validated @RequestBody Todo todo) {
-        return todoService.save(todo);
+    public ResponseEntity<Todo> createTodo(@Validated @RequestBody Todo todo, @RequestParam Long userId) {
+        Optional<User> userOptional = userService.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            todo.setUser(user);
+            Todo savedTodo = todoService.save(todo);
+            return ResponseEntity.ok(savedTodo);
+        } else {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @PutMapping("/{id}")
